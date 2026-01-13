@@ -42,7 +42,7 @@ model User {
 }
 
 model Booking {
-  id           BigInt        @id @default(autoincrement())
+  id           String        @id @default(uuid())
   userId       String
   exhibitionId BigInt
   

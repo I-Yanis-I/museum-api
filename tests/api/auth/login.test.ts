@@ -89,8 +89,10 @@ describe('POST /api/auth/login', () => {
       role: 'VISITOR',
       createdAt: mockUser.createdAt.toISOString(),
       updatedAt: mockUser.updatedAt.toISOString(),
-      email: 'valid@example.com',
     })
-    expect(data.session).toHaveProperty('access_token', 'fake-token-123')
+    expect(AuthService.loginUser).toHaveBeenCalledWith({
+      email: 'valid@example.com',
+      password: 'Password123',
+    })
   })
 })

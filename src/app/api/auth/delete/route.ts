@@ -1,53 +1,24 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { UserService } from '@/lib/services/user.service'
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const userId = 'b26047c1-1e46-4fad-b4dc-ac9f9fee69b8' // Temporary
 
-    const userId = user.id
+    await UserService.deleteAccount(userId)
 
-    const supabaseAdmin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    
-    const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-    
-    if (deleteAuthError) {
-      console.error('Auth deletion failed:', deleteAuthError)
-      return NextResponse.json(
-        { error: 'Failed to delete authentication' },
-        { status: 500 }
-      )
-    }
-
-    try {
-      await prisma.user.delete({ where: { id: userId } })
-    } catch (dbError) {
-      console.error('DB deletion failed:', dbError)
-    
-      return NextResponse.json(
-        { error: 'Failed to delete user data' },
-        { status: 500 }
-      )
-    }
-
-    await supabase.auth.signOut()
-
-    return new NextResponse(null, { status: 204 })
-    
-  } catch (error) {
-    console.error('Unexpected deletion error:', error)
     return NextResponse.json(
-      { error: 'Server error' },
+      { message: 'Account deleted successfully' },
+      { status: 200 }
+    )
+  } catch (error) {
+    if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    console.error('Delete account error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

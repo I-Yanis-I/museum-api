@@ -1,159 +1,54 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { DELETE } from '@/app/api/auth/delete/route'
+import { UserService } from '@/lib/services/user.service'
 
-// Create mock functions for Supabase
-const mockGetUser = vi.fn()
-const mockSignOut = vi.fn()
-const mockAdminDeleteUser = vi.fn()
-
-// Mock the Supabase server module
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => ({
-    auth: {
-      getUser: mockGetUser,
-      signOut: mockSignOut,
-    },
-  })),
-}))
-
-// Mock Supabase admin client
-vi.mock('@supabase/supabase-js', () => ({
-  createClient: vi.fn(() => ({
-    auth: {
-      admin: {
-        deleteUser: mockAdminDeleteUser,
-      },
-    },
-  })),
-}))
-
-// Mock Prisma client
-vi.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      delete: vi.fn(),
-    },
+// Mock UserService
+vi.mock('@/lib/services/user.service', () => ({
+  UserService: {
+    deleteAccount: vi.fn(),
   },
 }))
-
-import { prisma } from '@/lib/prisma'
 
 describe('DELETE /api/auth/delete', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
 
-  it('should return 401 if user is not authenticated', async () => {
-    mockGetUser.mockResolvedValueOnce({
-      data: { user: null },
-      error: { message: 'Invalid token' }
-    })
+  it('should return 200 if account deletion is successful', async () => {
+    // Mock UserService.deleteAccount to succeed
+    vi.mocked(UserService.deleteAccount).mockResolvedValueOnce(undefined)
 
-    const response = await DELETE()
-    expect(response.status).toBe(401)
-    
+    const response = await DELETE({} as Request)
+
+    expect(response.status).toBe(200)
     const data = await response.json()
-    expect(data).toEqual({ error: 'Unauthorized' })
-    expect(prisma.user.delete).not.toHaveBeenCalled()
-    expect(mockAdminDeleteUser).not.toHaveBeenCalled()
+    expect(data).toEqual({ message: 'Account deleted successfully' })
+    expect(UserService.deleteAccount).toHaveBeenCalled()
   })
 
-  it('should return 500 if Prisma delete fails', async () => {
-    mockGetUser.mockResolvedValueOnce({
-      data: { 
-        user: { 
-          id: '123', 
-          email: 'user@example.com' 
-        } 
-      },
-      error: null
-    })
+  it('should return 404 if user is not found', async () => {
+    // Mock UserService.deleteAccount to throw USER_NOT_FOUND error
+    vi.mocked(UserService.deleteAccount).mockRejectedValueOnce(
+      new Error('USER_NOT_FOUND')
+    )
 
-    mockAdminDeleteUser.mockResolvedValueOnce({
-      data: {},
-      error: null
-    })
+    const response = await DELETE({} as Request)
 
-    vi.mocked(prisma.user.delete).mockRejectedValueOnce(
+    expect(response.status).toBe(404)
+    const data = await response.json()
+    expect(data).toEqual({ error: 'User not found' })
+  })
+
+  it('should return 500 if deletion fails with unknown error', async () => {
+    // Mock UserService.deleteAccount to throw generic error
+    vi.mocked(UserService.deleteAccount).mockRejectedValueOnce(
       new Error('Database error')
     )
 
-    const response = await DELETE()
+    const response = await DELETE({} as Request)
 
     expect(response.status).toBe(500)
     const data = await response.json()
-    expect(data).toEqual({ error: 'Failed to delete user data' })
-    
-    expect(mockAdminDeleteUser).toHaveBeenCalledWith('123')
-    expect(prisma.user.delete).toHaveBeenCalledWith({
-      where: { id: '123' },
-    })
-    expect(mockSignOut).not.toHaveBeenCalled()
-  })
-
-  it('should return 500 if Supabase admin delete fails', async () => {
-    mockGetUser.mockResolvedValueOnce({
-      data: { 
-        user: { 
-          id: '123', 
-          email: 'user@example.com' 
-        } 
-      },
-      error: null
-    })
-
-    mockAdminDeleteUser.mockResolvedValueOnce({
-      data: null,
-      error: { message: 'Failed to delete user' }
-    })
-
-    const response = await DELETE()
-
-    expect(response.status).toBe(500)
-    const data = await response.json()
-    expect(data).toEqual({ error: 'Failed to delete authentication' })
-    
-    expect(mockAdminDeleteUser).toHaveBeenCalledWith('123')
-    expect(prisma.user.delete).not.toHaveBeenCalled()
-    expect(mockSignOut).not.toHaveBeenCalled()
-  })
-
-  it('should return 204 if account deletion is successful', async () => {
-    mockGetUser.mockResolvedValueOnce({
-      data: { 
-        user: { 
-          id: '123', 
-          email: 'user@example.com' 
-        } 
-      },
-      error: null
-    })
-
-    mockAdminDeleteUser.mockResolvedValueOnce({
-      data: {},
-      error: null
-    })
-
-    vi.mocked(prisma.user.delete).mockResolvedValueOnce({
-      id: '123',
-      email: 'user@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-
-    mockSignOut.mockResolvedValueOnce({ error: null })
-
-    const response = await DELETE()
-
-    expect(response.status).toBe(204)
-    
-    expect(mockGetUser).toHaveBeenCalled()
-    expect(mockAdminDeleteUser).toHaveBeenCalledWith('123')
-    expect(prisma.user.delete).toHaveBeenCalledWith({
-      where: { id: '123' },
-    })
-    expect(mockSignOut).toHaveBeenCalled()
+    expect(data).toEqual({ error: 'Internal server error' })
   })
 })

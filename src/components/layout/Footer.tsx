@@ -9,8 +9,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-bold mb-4">Musée d&apos;Art</h3>
             <p className="text-gray-400 text-sm">
-              Découvrez notre collection exceptionnelle d&apos;œuvres d&apos;art 
-              du monde entier.
+              Découvrez nos collections.
             </p>
           </div>
 

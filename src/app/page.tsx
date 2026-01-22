@@ -6,13 +6,13 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20">
+      <section className="bg-gradient-to-r from-yellow-600 to-yellow-700 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 text-center">
           <h1 className="text-5xl font-bold mb-6">
             Bienvenue au Musée d&apos;Art
           </h1>
-          <p className="text-xl mb-8 text-blue-100">
-            Découvrez notre collection d&apos;œuvres
+          <p className="text-xl mb-8 text-pink-100">
+            Découvrez nos collections
           </p>
           <Button variant="secondary">
             Explorer les expositions

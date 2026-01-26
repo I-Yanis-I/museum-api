@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { LoginSchema } from '@/lib/validators/auth'
 import { AuthService } from '@/lib/services/auth.service'
 import { JWTService } from '@/lib/services/jwt.service'
+import { ZodError } from 'zod'
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,15 +57,28 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Login error:', error)
 
-    if (error instanceof Error) {
+    // Validation errors
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { success: false, error: error.message },
+        {
+          error: 'Validation failed',
+          errors: error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      )
+    }
+
+    // Invalid credentials
+    if (error instanceof Error && error.message === 'INVALID_CREDENTIALS') {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
+    // Unknown errors
     return NextResponse.json(
-      { success: false, error: 'Error during login' },
+      { error: 'Error during login' },
       { status: 500 }
     )
   }

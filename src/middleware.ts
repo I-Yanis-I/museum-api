@@ -82,9 +82,18 @@ export async function middleware(request: NextRequest) {
       // Invalid or expired token
       console.log(`[Middleware] ❌ Invalid token:`, error)
       
-      // Delete invalid cookie
-      const response = NextResponse.redirect(new URL('/login', request.url))
+      // If trying to access protected route → redirect to login
+      if (isProtectedRoute || isAdminRoute) {
+        const response = NextResponse.redirect(new URL('/login', request.url))
+        response.cookies.delete('refreshToken')
+        response.cookies.delete('accessToken')
+        return response
+      }
+      
+      // If on public route or auth route → just delete cookies and continue
+      const response = NextResponse.next()
       response.cookies.delete('refreshToken')
+      response.cookies.delete('accessToken')
       return response
     }
   }

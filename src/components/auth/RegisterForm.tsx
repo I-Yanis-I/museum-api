@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 
-export function RegisterForm() {
+export default function RegisterForm() {
   const { register } = useAuth()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)

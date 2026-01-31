@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import type { 
   AuthContextType, 
   AuthState, 
@@ -9,6 +9,7 @@ import type {
   UpdateProfileData, 
   User 
 } from '@/types/context/auth'
+import { logger } from '@/lib/utils/logger'
 
 /**
  * Authentication Context
@@ -44,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Verify current authentication session
    * Called on app initialization to restore user session if valid token exists
    */
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const response = await fetch('/api/auth/profile', {
         method: 'GET',
@@ -66,14 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
       }
     } catch (error) {
-      console.error('Failed to check auth:', error)
+      logger.error('Failed to check auth:', error)
       setAuthState({
         user: null,
         isAuthenticated: false,
         isLoading: false,
       })
     }
-  }
+  }, [])
 
   /**
    * Authenticate user with email and password
@@ -161,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
       })
     } catch (error) {
-      console.error('Logout failed:', error)
+      logger.error('Logout failed:', error)
       setAuthState({
         user: null,
         isAuthenticated: false,
@@ -206,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     checkAuth()
-  }, [])
+  }, [checkAuth])
 
   const value: AuthContextType = {
     ...authState,
